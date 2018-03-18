@@ -14,27 +14,13 @@ import org.apache.jena.rdf.model.StmtIterator;
  */
 public class Main {
 
-    private static final String inputFile = "/...";
     private static final String metaFile = "";
 
     static HashSet<ReifiedStatement> statements = new HashSet<>();
 
     public static void main(String[] args) {
         Model model = getInput();
-
-        //model.write(System.out, "NT");
-        System.out.println("\n\n\n\n\n");
-
-        System.out.println(statements.toString());
-        System.out.println(statements.size());
-
-        System.out.println("\n\n\n\n\n");
-
         Model model2 = getMetaData();
-        model2.write(System.out, "NT");
-
-        System.out.println("\n\n\n\n\n");
-
         Model union = model.union(model2);
         union.write(System.out, "NT");
     }
@@ -61,9 +47,11 @@ public class Main {
         Property start = model.createProperty(baseURL + "start");
         Property end = model.createProperty(baseURL + "end");
 
-        ReifiedStatement s = statements.iterator().next();
-        model.add(s, start, "1989");
-        model.add(s, end, "2004");
+        for (ReifiedStatement statement : statements) {
+            ReifiedStatement s = statement;
+            model.add(s, start, "1989");
+            model.add(s, end, "2004");
+        }
 
         return model;
     }
