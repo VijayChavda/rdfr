@@ -5,8 +5,8 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.ReifiedStatement;
-import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
+import org.apache.jena.rdf.model.StmtIterator;
 
 /**
  *
@@ -14,17 +14,19 @@ import org.apache.jena.rdf.model.Statement;
  */
 public class Main {
 
-    private static final String baseURL = "http://www.example.com/";
+    private static final String inputFile = "/...";
+    private static final String metaFile = "";
 
     static HashSet<ReifiedStatement> statements = new HashSet<>();
 
     public static void main(String[] args) {
         Model model = getInput();
-        model.write(System.out, "NT");
 
+        //model.write(System.out, "NT");
         System.out.println("\n\n\n\n\n");
 
         System.out.println(statements.toString());
+        System.out.println(statements.size());
 
         System.out.println("\n\n\n\n\n");
 
@@ -38,21 +40,23 @@ public class Main {
     }
 
     private static Model getInput() {
+        Model rmodel = ModelFactory.createDefaultModel();
         Model model = ModelFactory.createDefaultModel();
+        model.read(inputFile);
 
-        Resource john = model.createResource(baseURL + "john");
-        Property spouse = model.createProperty(baseURL + "spouse");
-        Resource jenny = model.createResource(baseURL + "jenny");
+        StmtIterator it = model.listStatements();
+        while (it.hasNext()) {
+            Statement statement = it.nextStatement();
+            ReifiedStatement reified = rmodel.createReifiedStatement(statement);
+            statements.add(reified);
+        }
 
-        Statement s = model.createStatement(john, spouse, jenny);
-        ReifiedStatement bnode = model.createReifiedStatement(s);
-        statements.add(bnode);
-
-        return model;
+        return rmodel;
     }
 
     private static Model getMetaData() {
         Model model = ModelFactory.createDefaultModel();
+        String baseURL = "http://www.example.com/";
 
         Property start = model.createProperty(baseURL + "start");
         Property end = model.createProperty(baseURL + "end");
