@@ -1,11 +1,13 @@
 package me.vijaychavda.rdfr;
 
-import java.util.HashSet;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.rdf.model.Property;
-import org.apache.jena.rdf.model.ReifiedStatement;
-import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
 
 /**
@@ -14,46 +16,88 @@ import org.apache.jena.rdf.model.StmtIterator;
  */
 public class Main {
 
-    private static final String metaFile = "";
-
-    static HashSet<ReifiedStatement> statements = new HashSet<>();
-
     public static void main(String[] args) {
-        Model model = getInput();
-        Model model2 = getMetaData();
-        Model union = model.union(model2);
-        union.write(System.out, "NT");
+        try {
+            String base = "...";
+            reify(base + "Q42.nt");
+        } catch (IOException | IllegalArgumentException ex) {
+            System.err.println(ex.getMessage());
+//            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
-    private static Model getInput() {
-        Model rmodel = ModelFactory.createDefaultModel();
-        Model model = ModelFactory.createDefaultModel();
-        model.read(inputFile);
+    public static void reify(String inputPath, String outputPath, String format)
+        throws IOException, IllegalArgumentException {
 
-        StmtIterator it = model.listStatements();
-        while (it.hasNext()) {
-            Statement statement = it.nextStatement();
-            ReifiedStatement reified = rmodel.createReifiedStatement(statement);
-            statements.add(reified);
+        if (inputPath == null || inputPath.isEmpty())
+            throw new IllegalArgumentException("Input RDF file is missing.");
+
+        if (!Files.exists(Paths.get(inputPath)))
+            throw new IllegalArgumentException("Could not find input RDF file.");
+
+        Path defaultOutputPath = Paths.get(
+            new File(inputPath).getParent(),
+            "reified-" + Paths.get(inputPath).getFileName()
+        );
+
+        File outputFile;
+        if (outputPath == null || outputPath.isEmpty()) {
+            outputFile = defaultOutputPath.toFile();
+            outputFile.createNewFile();
+        } else if (!Files.exists(Paths.get(outputPath))) {
+            outputFile = new File(outputPath);
+            outputFile.createNewFile();
+        } else {
+            outputFile = new File(outputPath);
+        }
+
+        if (format == null || format.isEmpty())
+            format = "NT";
+
+        switch (format) {
+            case "NQ":
+                format = "NQ";
+                break;
+            case "TTL":
+                format = "TTL";
+                break;
+            case "XML":
+                format = "RDF/XML";
+                break;
+            case "JSON":
+                format = "RDF/JSON";
+                break;
+            default:
+                format = "NT";
+        }
+
+        Model rmodel = do_reify(inputPath);
+        try (FileWriter writer = new FileWriter(outputFile)) {
+            rmodel.write(writer, format);
+        }
+    }
+
+    public static void reify(String inputPath, String outputPath)
+        throws IOException, IllegalArgumentException {
+        Main.reify(inputPath, outputPath, "");
+    }
+
+    public static void reify(String inputPath)
+        throws IOException, IllegalArgumentException {
+        Main.reify(inputPath, "", "");
+    }
+
+    private static Model do_reify(String rdfFilePath) {
+        Model rmodel = ModelFactory.createDefaultModel();
+
+        Model model = ModelFactory.createDefaultModel();
+        model.read(rdfFilePath);
+
+        StmtIterator listStatements = model.listStatements();
+        while (listStatements.hasNext()) {
+            rmodel.createReifiedStatement(listStatements.nextStatement());
         }
 
         return rmodel;
     }
-
-    private static Model getMetaData() {
-        Model model = ModelFactory.createDefaultModel();
-        String baseURL = "http://www.example.com/";
-
-        Property start = model.createProperty(baseURL + "start");
-        Property end = model.createProperty(baseURL + "end");
-
-        for (ReifiedStatement statement : statements) {
-            ReifiedStatement s = statement;
-            model.add(s, start, "1989");
-            model.add(s, end, "2004");
-        }
-
-        return model;
-    }
-
 }
