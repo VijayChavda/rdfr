@@ -1,13 +1,12 @@
 package me.vijaychavda.rdfr;
 
-import java.io.File;
-import java.io.FileWriter;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
 
 /**
@@ -16,88 +15,50 @@ import org.apache.jena.rdf.model.StmtIterator;
  */
 public class Main {
 
-    public static void main(String[] args) {
-        try {
             String base = "...";
-            reify(base + "Q42.nt");
-        } catch (IOException | IllegalArgumentException ex) {
-            System.err.println(ex.getMessage());
-//            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
+    public static void main(String[] args) throws FileNotFoundException, IOException {
 
-    public static void reify(String inputPath, String outputPath, String format)
-        throws IOException, IllegalArgumentException {
+        String inputRDF = base + "Q42.nt";
+        String metaRDF = base + "Q42-meta.nt";
+        String reifiedRDF = base + "reified-Q42.nt";
 
-        if (inputPath == null || inputPath.isEmpty())
-            throw new IllegalArgumentException("Input RDF file is missing.");
+        Model rmodel = Reifier.reify(inputRDF, reifiedRDF);
+        rmodel.write(System.out, "NT");
 
-        if (!Files.exists(Paths.get(inputPath)))
-            throw new IllegalArgumentException("Could not find input RDF file.");
+        System.out.println("\nGAP\n");
 
-        Path defaultOutputPath = Paths.get(
-            new File(inputPath).getParent(),
-            "reified-" + Paths.get(inputPath).getFileName()
-        );
+        Model mmodel = ModelFactory.createDefaultModel();
+        mmodel.read(metaRDF);
+        mmodel.write(System.out, "NT");
 
-        File outputFile;
-        if (outputPath == null || outputPath.isEmpty()) {
-            outputFile = defaultOutputPath.toFile();
-            outputFile.createNewFile();
-        } else if (!Files.exists(Paths.get(outputPath))) {
-            outputFile = new File(outputPath);
-            outputFile.createNewFile();
-        } else {
-            outputFile = new File(outputPath);
-        }
+        System.out.println("\nGAP\n");
 
-        if (format == null || format.isEmpty())
-            format = "NT";
+        Statement statement = rmodel.listStatements().nextStatement();
+        System.out.println(statement.getSubject().getId());
 
-        switch (format) {
-            case "NQ":
-                format = "NQ";
-                break;
-            case "TTL":
-                format = "TTL";
-                break;
-            case "XML":
-                format = "RDF/XML";
-                break;
-            case "JSON":
-                format = "RDF/JSON";
-                break;
-            default:
-                format = "NT";
+        System.out.println("\nGAP\n");
+
+        String subjectURI = "http://www.wikidata.org/entity/Q42";
+        String propertyURI = "http://www.wikidata.org/prop/direct/P26";
+        String objectURI = "http://www.wikidata.org/prop/direct/Q14623681";
+
+        Resource subject = rmodel.getResource(subjectURI);
+        Property property = rmodel.getProperty(propertyURI);
+        Resource object = rmodel.getResource(objectURI);
+
+        Resource bnode = rmodel.createResource();
+
+        StmtIterator metaStatements = mmodel.listStatements();
+        while (metaStatements.hasNext()) {
+            Statement metaStatement = metaStatements.nextStatement();
+            rmodel.add(bnode, metaStatement.getPredicate(), metaStatement.getObject());
         }
 
-        Model rmodel = do_reify(inputPath);
-        try (FileWriter writer = new FileWriter(outputFile)) {
-            rmodel.write(writer, format);
-        }
-    }
+        rmodel.add(bnode, property, object);
+        rmodel.add(subject, property, bnode);
 
-    public static void reify(String inputPath, String outputPath)
-        throws IOException, IllegalArgumentException {
-        Main.reify(inputPath, outputPath, "");
-    }
+        System.out.println("\nGAP\n");
 
-    public static void reify(String inputPath)
-        throws IOException, IllegalArgumentException {
-        Main.reify(inputPath, "", "");
-    }
-
-    private static Model do_reify(String rdfFilePath) {
-        Model rmodel = ModelFactory.createDefaultModel();
-
-        Model model = ModelFactory.createDefaultModel();
-        model.read(rdfFilePath);
-
-        StmtIterator listStatements = model.listStatements();
-        while (listStatements.hasNext()) {
-            rmodel.createReifiedStatement(listStatements.nextStatement());
-        }
-
-        return rmodel;
+        rmodel.write(System.out, "NT");
     }
 }
