@@ -4,10 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.rdf.model.Resource;
-import org.apache.jena.rdf.model.Statement;
-import org.apache.jena.rdf.model.StmtIterator;
 
 /**
  *
@@ -84,35 +80,8 @@ public class Main {
         if (args[0].equals("-reify"))
             return;
 
-        Resource meta = rmodel.createResource();
-
-        StmtIterator metaStatements = ModelFactory.createDefaultModel()
-            .read(metaPath).listStatements();
-        while (metaStatements.hasNext()) {
-            Statement metaStatement = metaStatements.nextStatement();
-
-            rmodel.add(meta, metaStatement.getPredicate(),
-                metaStatement.getObject());
-        }
-
-        Model model = ModelFactory.createDefaultModel().read(inputPath);
-
-        StmtIterator statements = model.listStatements(
-            model.getResource(subjectURI),
-            model.getProperty(propertyURI),
-            model.getResource(objectURI)
-        );
-
-        while (statements.hasNext()) {
-            Statement statement = statements.nextStatement();
-
-            rmodel
-                .add(meta, statement.getPredicate(), statement.getObject());
-            rmodel.add(statement.getSubject(), statement.getPredicate(),
-                meta);
-        }
-
-        rmodel.write(System.out, "NT");
+        AddMetaWorker.create(inputPath, metaPath)
+            .addMeta(rmodel);
     }
 
     private static void showUsageAndExit() {
