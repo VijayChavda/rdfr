@@ -15,14 +15,11 @@ import org.apache.jena.rdf.model.StmtIterator;
  */
 public class Main {
 
-            String base = "...";
     public static void main(String[] args) {
 
-        if (args.length == 0) {
-            System.err.println(
-                "Usage: rdfr <MODE> <INPUT_RDF_PATH> [OPTIONS...]");
-            System.err.println("Use rdfr -help for more details.");
-            return;
+        if (args.length == 0 || !args[0].equals("-reify") &&
+            !args[0].equals("-add-meta") && !args[0].equals("-help")) {
+            showUsageAndExit();
         }
 
         if (args[0].equals("-help")) {
@@ -39,26 +36,64 @@ public class Main {
             return;
         }
 
-        String inputPath = base + "Q42.nt";
-        String outputPath = base + "reified-Q42.nt";
+        String inputPath, outputPath, metaPath, subjectURI, propertyURI, objectURI;
+        outputPath = metaPath = subjectURI = propertyURI = objectURI = null;
+
         String format = "NT";
 
-        Model rmodel = null;
+        int arg = 0;
+
+        inputPath = args[++arg];
+
+        if (args[0].equals("-add-meta")) {
+            metaPath = args[++arg];
+        }
+
+        while (arg + 1 < args.length) {
+            switch (args[++arg]) {
+                case "-o":
+                    outputPath = args[++arg];
+                    break;
+                case "-f":
+                    format = args[++arg];
+                    break;
+                case "-s":
+                    subjectURI = args[++arg];
+                    break;
+                case "-p":
+                    propertyURI = args[++arg];
+                    break;
+                case "-v":
+                    objectURI = args[++arg];
+                    break;
+                default:
+                    //ignore
+                    break;
+            }
+        }
+
+        Model rmodel;
         try {
             rmodel = Reifier.reify(inputPath, outputPath, format);
         } catch (IOException | IllegalArgumentException ex) {
             System.err.println(ex.getMessage());
             //Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        if (rmodel == null) {
-            System.err.println("Reification failed. The program will exit.");
-            System.exit(-1);
+            return;
         }
 
-        String metaPath = base + "Q42-meta.nt";
-        String subjectURI = "http://www.wikidata.org/entity/Q42";
-        String propertyURI = "http://www.wikidata.org/prop/direct/P26";
-        String objectURI = "http://www.wikidata.org/entity/Q14623681";
+        if (args[0].equals("-reify"))
+            return;
+
+        Resource meta = rmodel.createResource();
+
+        StmtIterator metaStatements = ModelFactory.createDefaultModel()
+            .read(metaPath).listStatements();
+        while (metaStatements.hasNext()) {
+            Statement metaStatement = metaStatements.nextStatement();
+
+            rmodel.add(meta, metaStatement.getPredicate(),
+                metaStatement.getObject());
+        }
 
         Model model = ModelFactory.createDefaultModel().read(inputPath);
 
@@ -68,24 +103,21 @@ public class Main {
             model.getResource(objectURI)
         );
 
-        StmtIterator metaStatements = ModelFactory.createDefaultModel()
-            .read(metaPath).listStatements();
-
-        Resource meta = rmodel.createResource();
-        while (metaStatements.hasNext()) {
-            Statement metaStatement = metaStatements.nextStatement();
-
-            rmodel.add(meta, metaStatement.getPredicate(),
-                metaStatement.getObject());
-        }
-
         while (statements.hasNext()) {
             Statement statement = statements.nextStatement();
 
-            rmodel.add(meta, statement.getPredicate(), statement.getObject());
-            rmodel.add(statement.getSubject(), statement.getPredicate(), meta);
+            rmodel
+                .add(meta, statement.getPredicate(), statement.getObject());
+            rmodel.add(statement.getSubject(), statement.getPredicate(),
+                meta);
         }
 
         rmodel.write(System.out, "NT");
+    }
+
+    private static void showUsageAndExit() {
+        System.err.println("Usage: rdfr <MODE> <INPUT_RDF_PATH> [OPTIONS...]");
+        System.err.println("Use rdfr -help for more details.");
+        System.exit(0);
     }
 }
