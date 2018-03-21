@@ -1,6 +1,8 @@
 package me.vijaychavda.rdfr;
 
 import java.io.IOException;
+import java.io.InputStream;
+import org.apache.commons.io.IOUtils;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
@@ -15,6 +17,27 @@ public class Main {
 
             String base = "...";
     public static void main(String[] args) {
+
+        if (args.length == 0) {
+            System.err.println(
+                "Usage: rdfr <MODE> <INPUT_RDF_PATH> [OPTIONS...]");
+            System.err.println("Use rdfr -help for more details.");
+            return;
+        }
+
+        if (args[0].equals("-help")) {
+            try {
+                InputStream resourceAsStream = Main.class.getResourceAsStream(
+                    "/manual.txt");
+                System.out.println(
+                    IOUtils.toString(resourceAsStream, (String) null)
+                );
+            } catch (IOException ex) {
+                System.err.println("Failed to load the manual.");
+//                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            return;
+        }
 
         String inputPath = base + "Q42.nt";
         String outputPath = base + "reified-Q42.nt";
