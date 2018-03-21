@@ -20,10 +20,12 @@ public class Reifier {
         throws IOException, IllegalArgumentException {
 
         if (inputPath == null || inputPath.isEmpty())
-            throw new IllegalArgumentException("Input RDF file is missing.");
+            throw new IllegalArgumentException(
+                "Path to input RDF file is missing.");
 
         if (!Files.exists(Paths.get(inputPath)))
-            throw new IllegalArgumentException("Could not find input RDF file.");
+            throw new IllegalArgumentException(
+                "Could not find input RDF file. Ensure that the file exist, and is readable.");
 
         Path defaultOutputPath = Paths.get(new File(inputPath).getParent(),
             "reified-" + Paths.get(inputPath).getFileName()
@@ -40,10 +42,21 @@ public class Reifier {
             outputFile = new File(outputPath);
         }
 
+        if (!outputFile.exists() || !outputFile.canWrite()) {
+            throw new IOException(
+                "Could not create a writable output RDF file at given path: " +
+                outputPath);
+        }
+
+        format = format.toUpperCase();
+
         if (format == null || format.isEmpty())
             format = "NT";
 
         switch (format) {
+            case "NT":
+                format = "NT";
+                break;
             case "NQ":
                 format = "NQ";
                 break;
@@ -57,7 +70,8 @@ public class Reifier {
                 format = "RDF/JSON";
                 break;
             default:
-                format = "NT";
+                throw new IllegalArgumentException(
+                    "Unsupported RDF format: " + format);
         }
 
         Model rmodel = do_reify(inputPath);
