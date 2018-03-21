@@ -48,12 +48,10 @@ public class Reifier {
                 outputPath);
         }
 
-        format = format.toUpperCase();
-
         if (format == null || format.isEmpty())
             format = "NT";
 
-        switch (format) {
+        switch (format.toUpperCase()) {
             case "NT":
                 format = "NT";
                 break;
@@ -76,7 +74,7 @@ public class Reifier {
 
         Model rmodel = do_reify(inputPath);
         try (FileWriter writer = new FileWriter(outputFile)) {
-            rmodel.write(writer, format);
+            rmodel.write(writer, format.toUpperCase());
         }
 
         return rmodel;
