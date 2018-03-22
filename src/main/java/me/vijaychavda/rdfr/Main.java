@@ -12,11 +12,17 @@ import org.apache.commons.io.IOUtils;
 import org.apache.jena.rdf.model.Model;
 
 /**
+ * The main class. It is main. Main class. Yes, Main. The MAIN class!!
  *
  * @author Vijay
  */
 public class Main {
 
+    /**
+     * Entry point for this program. See manual for usage.
+     *
+     * @param args See the manual please :)
+     */
     public static void main(String[] args) {
         if (args.length <= 1 || !args[0].equals("-reify") && !args[0].equals("-add-meta") && !args[0].equals("-help")) {
             showUsageAndExit();
@@ -92,6 +98,14 @@ public class Main {
         }
     }
 
+    /**
+     * Ensures that given path to any input file is a valid one; meaning that a
+     * readable RDF file must exist there.
+     *
+     * @param path The given input path.
+     * @param input Mode in which this program is running (<i>-reify</i> or
+     * <i>-add-meta</i>)
+     */
     private static void ensureValidInputPathOrExit(String path, String input) {
         if (path == null || path.isEmpty()) {
             showErrorAndExit("Path to " + input + " RDF file is missing.", null);
@@ -108,6 +122,32 @@ public class Main {
         }
     }
 
+    /**
+     * Ensures that the given input path is a valid one, and that a readable
+     * file exists there.
+     *
+     * The format of the input file is determined by it's extension, and it must
+     * be one of the following:
+     * <ul>
+     * <li>ttl</li>
+     * <li>rdf</li>
+     * <li>nt</li>
+     * <li>nq</li>
+     * <li>json</li>
+     * </ul>
+     *
+     * If the value of <i>outputPath</i> is <b>null</b> or "", then the input
+     * file is treated as output file; meaning that input file will be
+     * over-ridden. Note that it is assumed that given input file exists and is
+     * readable.
+     *
+     * @param outputPath The given output path.
+     * @param inputPath The given input path.
+     * @param mode Mode in which this program is running (<i>-reify</i> or
+     * <i>-add-meta</i>)
+     * @return Returns path to file which exists and is writable. It may be a
+     * different file than the one passed in argument of this method.
+     */
     private static String ensureValidOutputPathOrExit(String outputPath, String inputPath, String mode) {
         if (outputPath == null || outputPath.isEmpty()) {
             return inputPath;
@@ -172,6 +212,14 @@ public class Main {
         return null;
     }
 
+    /**
+     * Associates user given format to the JENA specific format, while ensuring
+     * that the format is supported by this application. If the given format is
+     * unrecognized, the program exits.
+     *
+     * @param format The given format.
+     * @return A valid JENA specific format.
+     */
     private static String ensureSupportedFormatOrExit(String format) {
         if (format == null || format.isEmpty()) {
             return "NT";
@@ -195,12 +243,18 @@ public class Main {
         return format;
     }
 
+    /**
+     * Prints the usage hint for this program to the output stream, and exits.
+     */
     private static void showUsageAndExit() {
         System.err.println("Usage: rdfr <MODE> <INPUT_RDF> [OPTIONS...]");
         System.err.println("Use rdfr -help for more details.");
         System.exit(0);
     }
 
+    /**
+     * Prints the manual to output stream, and exits.
+     */
     private static void showHelpAndExit() {
         try {
             InputStream istream = Main.class.getResourceAsStream("/manual.txt");
@@ -212,6 +266,13 @@ public class Main {
         System.exit(0);
     }
 
+    /**
+     * Prints an error message to output stream and exits. If value of 'ex' is
+     * not null, then it will also log the exception.
+     *
+     * @param message The message to display.
+     * @param ex The exception to log.
+     */
     private static void showErrorAndExit(String message, Exception ex) {
         System.err.println(message);
         if (ex != null) {
