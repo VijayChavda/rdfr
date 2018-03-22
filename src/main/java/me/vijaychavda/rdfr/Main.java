@@ -18,7 +18,6 @@ import org.apache.jena.rdf.model.Model;
 public class Main {
 
     public static void main(String[] args) {
-
         if (args.length <= 1 || !args[0].equals("-reify") && !args[0].equals("-add-meta") && !args[0].equals("-help")) {
             showUsageAndExit();
         }
@@ -36,13 +35,14 @@ public class Main {
         inputPath = args[++arg];
         ensureValidInputPathOrExit(inputPath, "input");
 
-        outputPath = format = null;
-        metaPath = subjectURI = propertyURI = objectURI = null;
-
         if (args[0].equals("-add-meta")) {
             metaPath = args[++arg];
             ensureValidInputPathOrExit(metaPath, "meta");
         }
+
+        metaPath = subjectURI = propertyURI = objectURI = null;
+        outputPath = inputPath;
+        format = "NT";
 
         while (arg + 1 < args.length) {
             switch (args[++arg]) {
