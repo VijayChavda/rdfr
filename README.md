@@ -81,7 +81,7 @@
 5. Add the RDF meta-data data-set in "./meta.nt" to the input RDF data-set in "/input.nt". Meta-data will be added to only those statements in "/input.nt" which have matching -s, -p and -o values.
 
 			
-		Example:	$ rdfr -reify ./input.nt -f json
+		Example:	$ rdrf -add-meta ./input.nt ./meta.nt -s http://www.example.com/subject -p http://www.example.com/property -o http://www.example.com/object
 	
 6. Add the RDF meta-data data-set in "./meta.nt" to the input RDF data-set in "/input.nt". Meta-data will be added to all the statements in "/input.nt".
 			
