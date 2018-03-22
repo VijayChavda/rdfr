@@ -39,28 +39,37 @@ public class AddMetaWorker {
     Model addMeta(Model rmodel) throws IOException {
         Model model = ModelFactory.createDefaultModel().read(inputPath);
 
+        //For each reified statement (to some of them we want to add meta-data):
         StmtIterator statements = model.listStatements();
         while (statements.hasNext()) {
             Statement statement = statements.nextStatement();
 
+            //If any of the triplet URI is given, then to only the statements with matching 
+            //respective triplet values will the meta-data be added.
             if (subjectURI != null && !statement.getSubject().getURI().equals(subjectURI) ||
                 propertyURI != null && !statement.getPredicate().getURI().equals(propertyURI) ||
                 objectURI != null && !statement.getObject().asNode().getURI().equals(objectURI)) {
                 continue;
             }
 
+            //An auxilary note to make the n-ary relationship as binary relationships.
             Resource bnode = rmodel.createResource();
 
             StmtIterator metaStatements = ModelFactory.createDefaultModel().read(metaPath).listStatements();
             while (metaStatements.hasNext()) {
                 Statement metaStatement = metaStatements.nextStatement();
+                //Add meta-data statement to auxilary node.
                 rmodel.add(bnode, metaStatement.getPredicate(), metaStatement.getObject());
             }
 
+            //Add the original object of statement to this auxilary node.
             rmodel.add(bnode, statement.getPredicate(), statement.getObject());
+
+            //Add the auxilary node as object of the original statement.
             rmodel.add(statement.getSubject(), statement.getPredicate(), bnode);
         }
 
+        //Write the new RDF data-set.
         try (FileWriter writer = new FileWriter(outputPath)) {
             rmodel.write(writer, format.toUpperCase());
         }

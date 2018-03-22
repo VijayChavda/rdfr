@@ -69,9 +69,9 @@ public class Reifier {
      * @return A reified model.
      */
     private static Model do_reify(String rdfFilePath) {
-        Model rmodel = ModelFactory.createDefaultModel();
+        Model rmodel = ModelFactory.createDefaultModel();   //Reified model.
 
-        Model model = ModelFactory.createDefaultModel();
+        Model model = ModelFactory.createDefaultModel();    //Existing model.
         model.read(rdfFilePath);
 
         StmtIterator listStatements = model.listStatements();

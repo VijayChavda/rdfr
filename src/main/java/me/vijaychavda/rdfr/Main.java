@@ -24,32 +24,37 @@ public class Main {
      * @param args See the manual please :)
      */
     public static void main(String[] args) {
+        //Ensure proper usage of program.
         if (args.length <= 1 || !args[0].equals("-reify") && !args[0].equals("-add-meta") && !args[0].equals("-help")) {
             showUsageAndExit();
         }
 
+        //Show help
         if (args[0].equals("-help")) {
             showHelpAndExit();
         }
 
         int arg = 0;
 
-        String mode = args[0];
-        String inputPath, outputPath, format;
-        String metaPath, subjectURI, propertyURI, objectURI;
+        String mode = args[0];  //Mode can be "-reify" or "-add-meta".
+        String inputPath, outputPath, format;   //General variables.
+        String metaPath, subjectURI, propertyURI, objectURI;    //Used in adding meta-information
 
+        //Read and validate input path.
         inputPath = args[++arg];
         ensureValidInputPathOrExit(inputPath, "input");
 
+        //Read and validate meta-data path, if mode is "-add-meta".
         if (args[0].equals("-add-meta")) {
             metaPath = args[++arg];
             ensureValidInputPathOrExit(metaPath, "meta");
         }
 
         metaPath = subjectURI = propertyURI = objectURI = null;
-        outputPath = inputPath;
-        format = "NT";
+        outputPath = inputPath; //By default, input file will is overriden.
+        format = "NT";  //Default output format.
 
+        //<editor-fold defaultstate="collapsed" desc="Reading CLAs">
         while (arg + 1 < args.length) {
             switch (args[++arg]) {
                 case "-o":
@@ -72,7 +77,9 @@ public class Main {
                     break;
             }
         }
+        //</editor-fold>
 
+        //<editor-fold defaultstate="collapsed" desc="Reification">
         Model rmodel = null;
         try {
             rmodel = Reifier.reify(inputPath, outputPath, format);
@@ -81,10 +88,13 @@ public class Main {
                 "Reification failed. Error has been logged at: TODO", ex
             );
         }
+        //</editor-fold>
 
         if (mode.equals("-add-meta")) {
+            //<editor-fold defaultstate="collapsed" desc="Add meta-data">
             try {
-                AddMetaWorker.create(inputPath, metaPath)
+                AddMetaWorker
+                    .create(inputPath, metaPath)
                     .targetHas(subjectURI, propertyURI, objectURI)
                     .storeOutputAt(outputPath)
                     .inFormat(format)
@@ -95,6 +105,7 @@ public class Main {
                     ex
                 );
             }
+            //</editor-fold>
         }
     }
 
