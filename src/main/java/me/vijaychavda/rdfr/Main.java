@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import org.apache.commons.io.FileExistsException;
 import org.apache.commons.io.IOUtils;
 import org.apache.jena.rdf.model.Model;
 
@@ -15,52 +16,42 @@ import org.apache.jena.rdf.model.Model;
  */
 public class Main {
 
-    private static void displayHelpAndExit() {
-        try {
-            InputStream resourceAsStream = Main.class.getResourceAsStream(
-                "/manual.txt");
-            System.out.println(
-                IOUtils.toString(resourceAsStream, (String) null)
-            );
-        } catch (IOException ex) {
-            System.err.println("Failed to load the manual.");
-//                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-        System.exit(0);
-    }
-
     public static void main(String[] args) {
 
-        if (args.length == 0 || !args[0].equals("-reify") && !args[0].equals(
+        if (args.length <= 1 || !args[0].equals("-reify") && !args[0].equals(
             "-add-meta") && !args[0].equals("-help")) {
             showUsageAndExit();
         }
 
         if (args[0].equals("-help")) {
-            displayHelpAndExit();
+            showHelpAndExit();
         }
-
-        String inputPath, outputPath, metaPath, subjectURI, propertyURI, objectURI;
-        outputPath = metaPath = subjectURI = propertyURI = objectURI = null;
-
-        String format = "NT";
 
         int arg = 0;
 
+        String mode = args[0];
+        String inputPath, outputPath, format;
+        String metaPath, subjectURI, propertyURI, objectURI;
+
         inputPath = args[++arg];
+        ensureValidInputPathOrExit(inputPath, "input");
+
+        outputPath = format = null;
+        metaPath = subjectURI = propertyURI = objectURI = null;
 
         if (args[0].equals("-add-meta")) {
             metaPath = args[++arg];
+            ensureValidInputPathOrExit(metaPath, "meta");
         }
 
         while (arg + 1 < args.length) {
             switch (args[++arg]) {
                 case "-o":
-                    outputPath = args[++arg];
+                    outputPath = ensureValidOutputPathOrExit(args[++arg],
+                        inputPath, mode);
                     break;
                 case "-f":
-                    format = args[++arg];
+                    format = ensureSupportedFormatOrExit(args[++arg]);
                     break;
                 case "-s":
                     subjectURI = args[++arg];
@@ -77,90 +68,156 @@ public class Main {
             }
         }
 
-        EnsureValidInputPath(inputPath);
-
-        EnsureAValidOutputPath(outputPath, inputPath);
-
-        format = processFormat(format);
-
-        Model rmodel;
+        Model rmodel = null;
         try {
             rmodel = Reifier.reify(inputPath, outputPath, format);
         } catch (IOException | IllegalArgumentException ex) {
-            System.err.println(ex.getMessage());
-            //Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-            return;
+            showErrorAndExit(
+                "Reification failed. Error has been logged at: TODO", ex
+            );
         }
 
-        if (args[0].equals("-add-meta"))
-            AddMetaWorker.create(inputPath, metaPath).inFormat(format)
-                .addMeta(rmodel);
+        if (mode.equals("-add-meta")) {
+            try {
+                AddMetaWorker.create(inputPath, metaPath)
+                    .targetHas(subjectURI, propertyURI, objectURI)
+                    .storeOutputAt(outputPath)
+                    .inFormat(format)
+                    .addMeta(rmodel);
+            } catch (IOException ex) {
+                showErrorAndExit(
+                    "Adding meta-data failed. Error has been logged at: TODO",
+                    ex
+                );
+            }
+        }
+    }
+
+    private static void ensureValidInputPathOrExit(String inputPath,
+        String input) {
+        if (inputPath == null || inputPath.isEmpty()) {
+            showErrorAndExit("Path to " + input + " RDF file is missing.", null);
+        }
+
+        if (!Files.exists(Paths.get(inputPath))) {
+            showErrorAndExit(
+                "Could not find " + input + " RDF file at location: '" +
+                inputPath +
+                "'.\nEnsure that the file exist, and is readable.", null
+            );
+        }
+    }
+
+    //assumes inputPath is valid.
+    private static String ensureValidOutputPathOrExit(String outputPath,
+        String inputPath, String mode) {
+
+        if (outputPath == null || outputPath.isEmpty())
+            return inputPath;
+
+        String inputFileName = (mode.equals("-reify") ? "reified-"
+            : "augmented-")
+            .concat(Paths.get(inputPath).getFileName().toString());
+
+        Path oPath = Paths.get(outputPath);
+
+        try {
+            if (Files.isDirectory(oPath))
+                Files.createDirectories(oPath);
+            else
+                Files.createDirectories(oPath.getParent());
+        } catch (FileExistsException ex) {
+            showErrorAndExit(
+                "Failed to create directories in the output path: " +
+                oPath.toString() +
+                ". Make sure a file with given directory name does not already exist.",
+                ex
+            );
+        } catch (IOException ex) {
+            showErrorAndExit(
+                "Failed to create directories in the output path: " +
+                oPath.toString(), ex
+            );
+        }
+
+        try {
+            if (Files.isDirectory(oPath)) {
+                File outputFile = new File(outputPath, inputFileName);
+                if (!outputFile.exists()) {
+                    outputFile.createNewFile();
+                }
+                oPath = outputFile.toPath();
+            }
+
+            if (!Files.exists(oPath))
+                oPath = Files.createFile(oPath);
+
+            if (Files.isWritable(oPath)) {
+                return oPath.toString();
+            } else {
+                showErrorAndExit(
+                    "Failed to create a writable output file at location: " +
+                    oPath, null
+                );
+            }
+        } catch (IOException ex) {
+            showErrorAndExit(
+                "Problem occured while creating output file at location: " +
+                oPath, ex
+            );
+        }
+
+        return null;
+    }
+
+    private static String ensureSupportedFormatOrExit(String format) {
+        if (format == null || format.isEmpty())
+            return "NT";
+
+        switch (format.toUpperCase()) {
+            case "NT":
+                return "NT";
+            case "NQ":
+                return "NQ";
+            case "TTL":
+                return "TTL";
+            case "XML":
+                return "RDF/XML";
+            case "JSON":
+                return "RDF/JSON";
+            default:
+                showErrorAndExit("Unsupported RDF format: " + format, null);
+        }
+
+        return format;
     }
 
     private static void showUsageAndExit() {
-        System.err.println("Usage: rdfr <MODE> <INPUT_RDF_PATH> [OPTIONS...]");
+        System.err.println("Usage: rdfr <MODE> <INPUT_RDF> [OPTIONS...]");
         System.err.println("Use rdfr -help for more details.");
         System.exit(0);
     }
 
-    private static void EnsureValidInputPath(String inputPath) {
-        if (inputPath == null || inputPath.isEmpty())
-            System.err.println("Path to input RDF file is missing.");
+    private static void showHelpAndExit() {
+        try {
+            InputStream resourceAsStream = Main.class.getResourceAsStream(
+                "/manual.txt");
+            System.out.println(
+                IOUtils.toString(resourceAsStream, (String) null)
+            );
+        } catch (IOException ex) {
+            System.err.println("Failed to load the manual.");
+//                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
-        if (!Files.exists(Paths.get(inputPath)))
-            System.err.println(
-                "Could not find input RDF file. Ensure that the file exist, and is readable.");
+        System.exit(0);
     }
 
-    private static void EnsureAValidOutputPath(String outputPath,
-        String defaultName) {
-        Path defaultOutputPath = Paths.get(new File(defaultName).getParent(),
-            "reified-" + Paths.get(defaultName).getFileName()
-        );
-
-        File outputFile;
-        if (outputPath == null || outputPath.isEmpty()) {
-            outputFile = defaultOutputPath.toFile();
-            outputFile.createNewFile();
-        } else if (!Files.exists(Paths.get(outputPath))) {
-            outputFile = new File(outputPath);
-            outputFile.createNewFile();
-        } else {
-            outputFile = new File(outputPath);
-        }
-
-        if (!outputFile.exists() || !outputFile.canWrite()) {
-            System.err.println(
-                "Could not create a writable output RDF file at given path: " +
-                outputPath);
-        }
-    }
-
-    private static String processFormat(String format) {
-        if (format == null || format.isEmpty())
-            format = "NT";
-
-        switch (format.toUpperCase()) {
-            case "NT":
-                format = "NT";
-                break;
-            case "NQ":
-                format = "NQ";
-                break;
-            case "TTL":
-                format = "TTL";
-                break;
-            case "XML":
-                format = "RDF/XML";
-                break;
-            case "JSON":
-                format = "RDF/JSON";
-                break;
-            default:
-                throw new IllegalArgumentException(
-                    "Unsupported RDF format: " + format);
-        }
-
-        return format;
+    private static void showErrorAndExit(String message, Exception ex) {
+        System.err.println(message);
+        if (ex != null)
+//            Logger.getLogger(Main.class.getName())
+//                .log(Level.SEVERE, message, ex);
+        System.exit(-1);
     }
 }

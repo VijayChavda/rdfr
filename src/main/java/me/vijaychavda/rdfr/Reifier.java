@@ -13,7 +13,7 @@ import org.apache.jena.rdf.model.StmtIterator;
 public class Reifier {
 
     public static Model reify(String inputPath, String outputPath, String format)
-        throws IOException, IllegalArgumentException {
+        throws IOException {
 
         Model rmodel = do_reify(inputPath);
         try (FileWriter writer = new FileWriter(outputPath)) {
@@ -24,12 +24,12 @@ public class Reifier {
     }
 
     public static Model reify(String inputPath, String outputPath)
-        throws IOException, IllegalArgumentException {
+        throws IOException {
         return reify(inputPath, outputPath, "");
     }
 
     public static Model reify(String inputPath)
-        throws IOException, IllegalArgumentException {
+        throws IOException {
         return reify(inputPath, "", "");
     }
 

@@ -1,5 +1,7 @@
 package me.vijaychavda.rdfr;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
@@ -14,42 +16,37 @@ public class AddMetaWorker {
 
     private String inputPath, outputPath, metaPath, subjectURI, propertyURI, objectURI, format;
 
-    public Model addMeta(Model rmodel) {
-        Resource meta = rmodel.createResource();
-
-        StmtIterator metaStatements = ModelFactory.createDefaultModel()
-            .read(metaPath).listStatements();
-        while (metaStatements.hasNext()) {
-            Statement metaStatement = metaStatements.nextStatement();
-
-            rmodel.add(meta, metaStatement.getPredicate(),
-                metaStatement.getObject());
-        }
-
+    public Model addMeta(Model rmodel) throws IOException {
         Model model = ModelFactory.createDefaultModel().read(inputPath);
 
-        StmtIterator statements = propertyURI != null
-            ? model.listStatements(
-                model.createResource(subjectURI),
-                model.createProperty(propertyURI),
-                model.createResource(objectURI)
-            )
-            : model.listStatements(
-                model.createResource(subjectURI),
-                null,
-                model.createResource(objectURI)
-            );
-
+        StmtIterator statements = model.listStatements();
         while (statements.hasNext()) {
             Statement statement = statements.nextStatement();
 
-            rmodel
-                .add(meta, statement.getPredicate(), statement.getObject());
-            rmodel.add(statement.getSubject(), statement.getPredicate(),
-                meta);
+            if ((subjectURI != null && !statement.getSubject().getURI().equals(
+                subjectURI)) ||
+                (propertyURI != null && !statement.getPredicate().getURI()
+                    .equals(propertyURI)) ||
+                (objectURI != null && !statement.getObject().asNode().getURI()
+                    .equals(objectURI)))
+                continue;
+
+            Resource bnode = rmodel.createResource();
+
+            StmtIterator metaStatements = ModelFactory.createDefaultModel()
+                .read(metaPath).listStatements();
+            while (metaStatements.hasNext()) {
+                Statement metaStatement = metaStatements.nextStatement();
+                rmodel.add(bnode, metaStatement.getPredicate(), metaStatement
+                    .getObject());
+            }
+            rmodel.add(bnode, statement.getPredicate(), statement.getObject());
+            rmodel.add(statement.getSubject(), statement.getPredicate(), bnode);
         }
 
-        rmodel.write(System.out, format);
+        try (FileWriter writer = new FileWriter(outputPath)) {
+            rmodel.write(writer, format.toUpperCase());
+        }
 
         return rmodel;
     }
