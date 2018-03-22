@@ -1,5 +1,5 @@
 # rdfr
-> Reification and adding meta-data of existing RDF data-set.
+> Reification and adding meta-data.
 
 ##### USAGE:
 ~~~~
