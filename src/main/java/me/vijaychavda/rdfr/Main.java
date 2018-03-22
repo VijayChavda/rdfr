@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.MessageFormat;
 import org.apache.commons.io.FileExistsException;
 import org.apache.commons.io.IOUtils;
 import org.apache.jena.rdf.model.Model;
@@ -18,8 +19,7 @@ public class Main {
 
     public static void main(String[] args) {
 
-        if (args.length <= 1 || !args[0].equals("-reify") && !args[0].equals(
-            "-add-meta") && !args[0].equals("-help")) {
+        if (args.length <= 1 || !args[0].equals("-reify") && !args[0].equals("-add-meta") && !args[0].equals("-help")) {
             showUsageAndExit();
         }
 
@@ -47,8 +47,7 @@ public class Main {
         while (arg + 1 < args.length) {
             switch (args[++arg]) {
                 case "-o":
-                    outputPath = ensureValidOutputPathOrExit(args[++arg],
-                        inputPath, mode);
+                    outputPath = ensureValidOutputPathOrExit(args[++arg], inputPath, mode);
                     break;
                 case "-f":
                     format = ensureSupportedFormatOrExit(args[++arg]);
@@ -93,44 +92,43 @@ public class Main {
         }
     }
 
-    private static void ensureValidInputPathOrExit(String inputPath,
-        String input) {
-        if (inputPath == null || inputPath.isEmpty()) {
+    private static void ensureValidInputPathOrExit(String path, String input) {
+        if (path == null || path.isEmpty()) {
             showErrorAndExit("Path to " + input + " RDF file is missing.", null);
         }
 
-        if (!Files.exists(Paths.get(inputPath))) {
+        if (!Files.exists(Paths.get(path))) {
             showErrorAndExit(
-                "Could not find " + input + " RDF file at location: '" +
-                inputPath +
-                "'.\nEnsure that the file exist, and is readable.", null
+                MessageFormat.format(
+                    "Could not find {0} RDF file at location: {1}. \n" +
+                    "Ensure that the file exists, and is readable",
+                    input, path
+                ), null
             );
         }
     }
 
-    //assumes inputPath is valid.
-    private static String ensureValidOutputPathOrExit(String outputPath,
-        String inputPath, String mode) {
-
-        if (outputPath == null || outputPath.isEmpty())
+    private static String ensureValidOutputPathOrExit(String outputPath, String inputPath, String mode) {
+        if (outputPath == null || outputPath.isEmpty()) {
             return inputPath;
+        }
 
-        String inputFileName = (mode.equals("-reify") ? "reified-"
-            : "augmented-")
+        String inputFileName = (mode.equals("-reify") ? "reified-" : "augmented-")
             .concat(Paths.get(inputPath).getFileName().toString());
 
         Path oPath = Paths.get(outputPath);
 
         try {
-            if (Files.isDirectory(oPath))
+            if (Files.isDirectory(oPath)) {
                 Files.createDirectories(oPath);
-            else
+            } else {
                 Files.createDirectories(oPath.getParent());
+            }
         } catch (FileExistsException ex) {
             showErrorAndExit(
                 "Failed to create directories in the output path: " +
                 oPath.toString() +
-                ". Make sure a file with given directory name does not already exist.",
+                ". Make sure a file with given path names does not already exist.",
                 ex
             );
         } catch (IOException ex) {
@@ -142,15 +140,19 @@ public class Main {
 
         try {
             if (Files.isDirectory(oPath)) {
+
                 File outputFile = new File(outputPath, inputFileName);
+
                 if (!outputFile.exists()) {
                     outputFile.createNewFile();
                 }
+
                 oPath = outputFile.toPath();
             }
 
-            if (!Files.exists(oPath))
+            if (!Files.exists(oPath)) {
                 oPath = Files.createFile(oPath);
+            }
 
             if (Files.isWritable(oPath)) {
                 return oPath.toString();
@@ -171,8 +173,9 @@ public class Main {
     }
 
     private static String ensureSupportedFormatOrExit(String format) {
-        if (format == null || format.isEmpty())
+        if (format == null || format.isEmpty()) {
             return "NT";
+        }
 
         switch (format.toUpperCase()) {
             case "NT":
@@ -200,14 +203,10 @@ public class Main {
 
     private static void showHelpAndExit() {
         try {
-            InputStream resourceAsStream = Main.class.getResourceAsStream(
-                "/manual.txt");
-            System.out.println(
-                IOUtils.toString(resourceAsStream, (String) null)
-            );
+            InputStream istream = Main.class.getResourceAsStream("/manual.txt");
+            System.out.println(IOUtils.toString(istream, (String) null));
         } catch (IOException ex) {
-            System.err.println("Failed to load the manual.");
-//                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            showErrorAndExit("Failed to load the manual.", ex);
         }
 
         System.exit(0);
@@ -215,9 +214,11 @@ public class Main {
 
     private static void showErrorAndExit(String message, Exception ex) {
         System.err.println(message);
-        if (ex != null)
-//            Logger.getLogger(Main.class.getName())
-//                .log(Level.SEVERE, message, ex);
+        if (ex != null) {
+//            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, message, ex);
+        }
+
         System.exit(-1);
+
     }
 }

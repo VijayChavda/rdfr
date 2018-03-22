@@ -12,9 +12,7 @@ import org.apache.jena.rdf.model.StmtIterator;
  */
 public class Reifier {
 
-    public static Model reify(String inputPath, String outputPath, String format)
-        throws IOException {
-
+    static Model reify(String inputPath, String outputPath, String format) throws IOException {
         Model rmodel = do_reify(inputPath);
         try (FileWriter writer = new FileWriter(outputPath)) {
             rmodel.write(writer, format.toUpperCase());
@@ -23,13 +21,11 @@ public class Reifier {
         return rmodel;
     }
 
-    public static Model reify(String inputPath, String outputPath)
-        throws IOException {
+    static Model reify(String inputPath, String outputPath) throws IOException {
         return reify(inputPath, outputPath, "");
     }
 
-    public static Model reify(String inputPath)
-        throws IOException {
+    static Model reify(String inputPath) throws IOException {
         return reify(inputPath, "", "");
     }
 
@@ -46,4 +42,5 @@ public class Reifier {
 
         return rmodel;
     }
+
 }
