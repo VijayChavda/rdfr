@@ -86,3 +86,20 @@
 6. Add the RDF meta-data data-set in "./meta.nt" to the input RDF data-set in "/input.nt". Meta-data will be added to all the statements in "/input.nt".
 			
 		Example:	$ rdrf -add-meta ./input.nt ./meta.nt
+
+##### SAMPLE INPUT DATA SET in NT:
+~~~~
+<http://www.wikidata.org/entity/Q42> <http://www.wikidata.org/prop/direct/P26> <http://www.wikidata.org/entity/Q14623681> .
+~~~~
+
+##### SAMPLE META DATA SET in NT:
+~~~~
+_:Bc8d03d29X2D4784X2D40a6X2D886cX2Dfb1a84da4db4 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://wikiba.se/ontology-beta#Statement> .
+_:Bc8d03d29X2D4784X2D40a6X2D886cX2Dfb1a84da4db4 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://wikiba.se/ontology-beta#BestRank> .
+_:Bc8d03d29X2D4784X2D40a6X2D886cX2Dfb1a84da4db4 <http://wikiba.se/ontology-beta#rank> <http://wikiba.se/ontology-beta#NormalRank> .
+_:Bc8d03d29X2D4784X2D40a6X2D886cX2Dfb1a84da4db4 <http://www.wikidata.org/prop/qualifier/P580> "1991-11-25T00:00:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> .
+_:Bc8d03d29X2D4784X2D40a6X2D886cX2Dfb1a84da4db4 <http://www.wikidata.org/prop/qualifier/value/P580> <http://www.wikidata.org/value/c8ae0d38443d4671d3f893d7000a859e> .
+_:Bc8d03d29X2D4784X2D40a6X2D886cX2Dfb1a84da4db4 <http://www.wikidata.org/prop/qualifier/P582> "2001-05-11T00:00:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> .
+_:Bc8d03d29X2D4784X2D40a6X2D886cX2Dfb1a84da4db4 <http://www.wikidata.org/prop/qualifier/value/P582> <http://www.wikidata.org/value/1c30ade7914d072877b2db404a683d7c> .
+_:Bc8d03d29X2D4784X2D40a6X2D886cX2Dfb1a84da4db4 <http://www.w3.org/ns/prov#wasDerivedFrom> <http://www.wikidata.org/reference/9177d75c6061e9e1ab149c0aa01bee5a90e07415> .
+~~~~
