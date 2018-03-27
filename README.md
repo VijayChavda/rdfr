@@ -15,7 +15,7 @@
 		Specifies the path to input RDF data-set.
 
 ##### META_RDF:
-		Specifies the path to meta RDF data-set.
+		Specifies the path to meta RDF data-set. A mandatory field if MODE is -add-meta.
 
 ##### OPTIONS:
 		-o		Specify path to the file where output data-set will be stored.
@@ -45,13 +45,15 @@
 
 3. If -f is not used, the output will be formatted as n-triples (NT format).
 
-4. By using combinations of -s -p and -o options, you can specify the set of statements in your input RDF data-set to which meta-data should be added.
+4. By using combinations of -s -p and -v options, you can specify the set of statements in your input RDF data-set to which meta-data should be added.
 
-5. If all of -s -p -o options are not used, then meta-data will be added to every statement in the given input RDF data-set.
+5. If all of -s -p -v options are not used, then meta-data will be added to every statement in the given input RDF data-set.
 
 6. What file extensions are used for the input or output RDF files have nothing to do with the format of output RDF data-set.
 
-7. Input RDF file, and meta-data RDF file must have one of following extension:
+7. The subject of meta-data RDF data-set is irrelevent, can keep it a blank node.
+
+8. Input RDF file, and meta-data RDF file must have one of following extension:
 					
 		Format		Description
 		*************************
@@ -78,10 +80,10 @@
 			
 		Example:	$ rdfr -reify ./input.nt -f json
 	
-5. Add the RDF meta-data data-set in "./meta.nt" to the input RDF data-set in "/input.nt". Meta-data will be added to only those statements in "/input.nt" which have matching -s, -p and -o values.
+5. Add the RDF meta-data data-set in "./meta.nt" to the input RDF data-set in "/input.nt". Meta-data will be added to only those statements in "/input.nt" which have matching -s, -p and -v values.
 
 			
-		Example:	$ rdrf -add-meta ./input.nt ./meta.nt -s http://www.example.com/subject -p http://www.example.com/property -o http://www.example.com/object
+		Example:	$ rdrf -add-meta ./input.nt ./meta.nt -s http://www.example.com/subject -p http://www.example.com/property -v http://www.example.com/object
 	
 6. Add the RDF meta-data data-set in "./meta.nt" to the input RDF data-set in "/input.nt". Meta-data will be added to all the statements in "/input.nt".
 			
